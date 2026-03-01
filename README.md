@@ -74,7 +74,12 @@ Real-world Data Analytics Application
 
 Global-Stock-Market-Dashboard/
 │
+
 ├── app.py
+
 ├── Global_Finance_Data.csv
+
 ├── requirements.txt
+
 └── README.md
+
