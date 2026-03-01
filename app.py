@@ -7,6 +7,11 @@ import os
 st.set_page_config(page_title="Global Stock Trading Dashboard",
                    layout="wide",
                    page_icon="📈")
+# ---------------- TITLE ----------------
+st.markdown(
+    "<h1 style='text-align:center;'>📊 Global Stock Market Dashboard</h1>",
+    unsafe_allow_html=True
+)
 
 # ---------------- STYLE ----------------
 st.markdown("""
