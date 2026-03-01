@@ -28,7 +28,7 @@ st.markdown("""
 @st.cache_data
 def load_data():
     base_path = os.path.dirname(os.path.abspath(__file__))
-    file_path = os.path.join(base_path, "Global_Stock_Data.csv")
+    file_path = os.path.join(base_path, "Global_Finance_Data.csv")
 
     df = pd.read_csv(file_path)
     df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
