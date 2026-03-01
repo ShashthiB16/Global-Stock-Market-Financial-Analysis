@@ -1,105 +1,156 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
+import plotly.graph_objects as go
 import plotly.express as px
+import os
 
-st.set_page_config(page_title="Global Finance Dashboard", layout="wide")
+st.set_page_config(page_title="Global Stock Trading Dashboard",
+                   layout="wide",
+                   page_icon="📈")
 
-st.title("📊 Global Finance Interactive Dashboard")
+# ---------------- STYLE ----------------
+st.markdown("""
+<style>
+.big-font {
+    font-size:28px !important;
+    font-weight:600;
+}
+.metric-card {
+    background-color:#111111;
+    padding:15px;
+    border-radius:10px;
+    text-align:center;
+}
+</style>
+""", unsafe_allow_html=True)
 
-# -------------------- FILE UPLOAD -------------------- #
-uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
+# ---------------- LOAD DATA ----------------
+@st.cache_data
+def load_data():
+    base_path = os.path.dirname(os.path.abspath(__file__))
+    file_path = os.path.join(base_path, "Global_Stock_Data.csv")
 
-if uploaded_file is not None:
+    df = pd.read_csv(file_path)
+    df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+    return df
 
-    # Read Data
-    df = pd.read_csv(uploaded_file)
+df = load_data()
 
-    # 🔥 Remove Unnamed Columns Automatically
-    df = df.loc[:, ~df.columns.str.contains("^Unnamed")]
+# ---------------- SIDEBAR FILTERS ----------------
+st.sidebar.title("📌 Filters")
 
-    # Convert Date Column if exists
-    if "Date" in df.columns:
-        df["Date"] = pd.to_datetime(df["Date"])
+country = st.sidebar.selectbox(
+    "Country",
+    sorted(df["Country"].dropna().unique())
+)
 
-    st.success("File Uploaded Successfully!")
+country_df = df[df["Country"] == country]
 
-    # -------------------- DATA PREVIEW -------------------- #
-    with st.expander("📄 View Raw Data"):
-        st.dataframe(df)
+company = st.sidebar.selectbox(
+    "Company",
+    sorted(country_df["Company"].dropna().unique())
+)
 
-    # -------------------- SIDEBAR FILTERS -------------------- #
-    st.sidebar.header("🔎 Filters")
+filtered_df = country_df[country_df["Company"] == company]
 
-    # Date Filter
-    if "Date" in df.columns:
-        start_date = st.sidebar.date_input("Start Date", df["Date"].min())
-        end_date = st.sidebar.date_input("End Date", df["Date"].max())
+start_date = st.sidebar.date_input("Start Date", filtered_df["Date"].min())
+end_date = st.sidebar.date_input("End Date", filtered_df["Date"].max())
 
-        df = df[(df["Date"] >= pd.to_datetime(start_date)) &
-                (df["Date"] <= pd.to_datetime(end_date))]
+filtered_df = filtered_df[
+    (filtered_df["Date"] >= pd.to_datetime(start_date)) &
+    (filtered_df["Date"] <= pd.to_datetime(end_date))
+]
 
-    numeric_cols = df.select_dtypes(include=np.number).columns.tolist()
+if filtered_df.empty:
+    st.warning("No data available")
+    st.stop()
 
-    selected_col = st.sidebar.selectbox("Select Column", numeric_cols)
+# ---------------- HEADER (FIXED TOP) ----------------
+latest_price = filtered_df["Close"].iloc[-1]
+first_price = filtered_df["Close"].iloc[0]
+percent = ((latest_price - first_price) / first_price) * 100
 
-    chart_type = st.sidebar.radio(
-        "Select Chart Type",
-        ["Line Chart", "Bar Chart", "Area Chart"]
-    )
+st.markdown(
+    f"<div class='big-font'>📈 {company} ({country})</div>",
+    unsafe_allow_html=True
+)
 
-    # -------------------- KPI SECTION -------------------- #
-    st.subheader("📌 Key Metrics")
-
-    col1, col2, col3 = st.columns(3)
-
-    col1.metric("Total Records", len(df))
-    col2.metric("Average Value", round(df[selected_col].mean(), 2))
-    col3.metric("Maximum Value", round(df[selected_col].max(), 2))
-
-    # -------------------- INTERACTIVE CHART -------------------- #
-    st.subheader(f"📈 {chart_type} of {selected_col}")
-
-    if "Date" in df.columns:
-
-        if chart_type == "Line Chart":
-            fig = px.line(df, x="Date", y=selected_col)
-
-        elif chart_type == "Bar Chart":
-            fig = px.bar(df, x="Date", y=selected_col)
-
-        else:
-            fig = px.area(df, x="Date", y=selected_col)
-
-        fig.update_layout(xaxis_title="Date", yaxis_title=selected_col)
-
-        st.plotly_chart(fig, use_container_width=True)
-
-    # -------------------- CORRELATION -------------------- #
-    st.subheader("🔥 Correlation Heatmap")
-
-    corr = df[numeric_cols].corr()
-
-    fig2 = px.imshow(
-        corr,
-        text_auto=True,
-        aspect="auto",
-        color_continuous_scale="RdBu_r"
-    )
-
-    st.plotly_chart(fig2, use_container_width=True)
-
-    # -------------------- DOWNLOAD BUTTON -------------------- #
-    st.subheader("⬇ Download Filtered Data")
-
-    csv = df.to_csv(index=False).encode("utf-8")
-
-    st.download_button(
-        label="Download CSV",
-        data=csv,
-        file_name="filtered_data.csv",
-        mime="text/csv",
-    )
-
+if percent >= 0:
+    st.markdown(f"### ₹ {latest_price:.2f}  🔼 {percent:.2f}%")
 else:
-    st.info("👆 Please upload a CSV file to start the dashboard.")
+    st.markdown(f"### ₹ {latest_price:.2f}  🔽 {percent:.2f}%")
+
+st.markdown("---")
+
+# ---------------- KPI + CHART LAYOUT ----------------
+left_col, right_col = st.columns([2,1])
+
+with left_col:
+
+    chart_type = st.radio(
+        "Chart Type",
+        ["Line", "Candlestick"],
+        horizontal=True
+    )
+
+    fig = go.Figure()
+
+    if chart_type == "Line":
+        fig.add_trace(go.Scatter(
+            x=filtered_df["Date"],
+            y=filtered_df["Close"],
+            mode='lines',
+            name='Close'
+        ))
+    else:
+        fig.add_trace(go.Candlestick(
+            x=filtered_df["Date"],
+            open=filtered_df["Open"],
+            high=filtered_df["High"],
+            low=filtered_df["Low"],
+            close=filtered_df["Close"],
+            name="Candle"
+        ))
+
+    fig.update_layout(
+        template="plotly_dark",
+        height=450,
+        margin=dict(l=20, r=20, t=30, b=20)
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+with right_col:
+
+    st.markdown("### 📊 Key Metrics")
+
+    high_price = filtered_df["High"].max()
+    low_price = filtered_df["Low"].min()
+    total_volume = int(filtered_df["Volume"].sum())
+
+    st.metric("Highest Price", f"{high_price:.2f}")
+    st.metric("Lowest Price", f"{low_price:.2f}")
+    st.metric("Total Volume", f"{total_volume:,}")
+
+    st.markdown("### 📌 Market Insight")
+
+    if percent > 0:
+        st.success("Stock is in upward trend.")
+    elif percent < 0:
+        st.error("Stock is in downward trend.")
+    else:
+        st.info("Stock is stable.")
+
+# ---------------- VOLUME (COMPACT BELOW) ----------------
+st.markdown("---")
+
+fig_volume = px.bar(
+    filtered_df,
+    x="Date",
+    y="Volume",
+    template="plotly_dark"
+)
+
+fig_volume.update_layout(height=250, margin=dict(l=20, r=20, t=20, b=20))
+
+st.plotly_chart(fig_volume, use_container_width=True)
