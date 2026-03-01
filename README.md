@@ -20,9 +20,9 @@ The dashboard includes:
 
 🔎 Smart Filters
 
-Select Country
+  Select Country
 
-Select Company
+  Select Company
 
 Choose Start & End Date
 
@@ -69,3 +69,12 @@ Technical Indicator Implementation
 Dashboard UI/UX Design
 
 Real-world Data Analytics Application
+
+📂 Project Structure
+
+Global-Stock-Market-Dashboard/
+│
+├── app.py
+├── Global_Finance_Data.csv
+├── requirements.txt
+└── README.md
