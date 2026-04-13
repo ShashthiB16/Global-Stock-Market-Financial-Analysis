@@ -88,64 +88,138 @@ else:
 st.markdown("---")
 
 # ---------------- KPI + CHART LAYOUT ----------------
-left_col, right_col = st.columns([2,1])
+left_col, right_col = st.columns([3, 1])
 
 with left_col:
 
-    chart_type = st.radio(
-        "Chart Type",
-        ["Line", "Candlestick"],
-        horizontal=True
+    # 🎯 Chart Selection
+    chart_type = st.selectbox(
+        "📊 Select Chart Type",
+        ["Line", "Candlestick", "OHLC", "Area"]
     )
+
+    # 🎯 Indicator Selection
+    show_ma = st.checkbox("Show Moving Average (20 days)")
+    show_volume = st.checkbox("Show Volume")
 
     fig = go.Figure()
 
+    # ---------------- CHART TYPES ----------------
     if chart_type == "Line":
         fig.add_trace(go.Scatter(
             x=filtered_df["Date"],
             y=filtered_df["Close"],
             mode='lines',
-            name='Close'
+            name='Close',
+            fill=None
         ))
-    else:
+
+    elif chart_type == "Area":
+        fig.add_trace(go.Scatter(
+            x=filtered_df["Date"],
+            y=filtered_df["Close"],
+            mode='lines',
+            fill='tozeroy',
+            name='Area Chart'
+        ))
+
+    elif chart_type == "Candlestick":
         fig.add_trace(go.Candlestick(
             x=filtered_df["Date"],
             open=filtered_df["Open"],
             high=filtered_df["High"],
             low=filtered_df["Low"],
             close=filtered_df["Close"],
-            name="Candle"
+            name="Candlestick"
         ))
 
+    elif chart_type == "OHLC":
+        fig.add_trace(go.Ohlc(
+            x=filtered_df["Date"],
+            open=filtered_df["Open"],
+            high=filtered_df["High"],
+            low=filtered_df["Low"],
+            close=filtered_df["Close"],
+            name="OHLC"
+        ))
+
+    # ---------------- MOVING AVERAGE ----------------
+    if show_ma:
+        filtered_df["MA20"] = filtered_df["Close"].rolling(20).mean()
+        fig.add_trace(go.Scatter(
+            x=filtered_df["Date"],
+            y=filtered_df["MA20"],
+            mode='lines',
+            name='MA20',
+            line=dict(dash='dash')
+        ))
+
+    # ---------------- VOLUME ----------------
+    if show_volume:
+        fig.add_trace(go.Bar(
+            x=filtered_df["Date"],
+            y=filtered_df["Volume"],
+            name="Volume",
+            yaxis="y2",
+            opacity=0.3
+        ))
+
+    # ---------------- LAYOUT ----------------
     fig.update_layout(
         template="plotly_dark",
-        height=450,
-        margin=dict(l=20, r=20, t=30, b=20)
+        height=500,
+        margin=dict(l=20, r=20, t=40, b=20),
+        xaxis_rangeslider_visible=True,
+        yaxis_title="Price",
+        yaxis2=dict(
+            overlaying='y',
+            side='right',
+            title="Volume",
+            showgrid=False
+        )
     )
 
     st.plotly_chart(fig, use_container_width=True)
 
+# ---------------- KPI SECTION ----------------
 with right_col:
 
-    st.markdown("### 📊 Key Metrics")
+    st.markdown("## 📊 Key Metrics")
 
     high_price = filtered_df["High"].max()
     low_price = filtered_df["Low"].min()
+    avg_price = filtered_df["Close"].mean()
     total_volume = int(filtered_df["Volume"].sum())
+
+    # 📈 Returns
+    start_price = filtered_df["Close"].iloc[0]
+    end_price = filtered_df["Close"].iloc[-1]
+    returns = ((end_price - start_price) / start_price) * 100
+
+    # 📉 Volatility
+    volatility = filtered_df["Close"].pct_change().std() * 100
 
     st.metric("Highest Price", f"{high_price:.2f}")
     st.metric("Lowest Price", f"{low_price:.2f}")
+    st.metric("Average Price", f"{avg_price:.2f}")
     st.metric("Total Volume", f"{total_volume:,}")
+    st.metric("Return %", f"{returns:.2f}%")
+    st.metric("Volatility", f"{volatility:.2f}%")
 
-    st.markdown("### 📌 Market Insight")
+    # ---------------- MARKET INSIGHT ----------------
+    st.markdown("## 📌 Market Insight")
 
-    if percent > 0:
-        st.success("Stock is in upward trend.")
-    elif percent < 0:
-        st.error("Stock is in downward trend.")
+    if returns > 2:
+        st.success("📈 Strong Uptrend")
+    elif returns > 0:
+        st.info("📊 Mild Uptrend")
+    elif returns < -2:
+        st.error("📉 Strong Downtrend")
+    elif returns < 0:
+        st.warning("⚠️ Mild Downtrend")
     else:
-        st.info("Stock is stable.")
-
+        st.info("➖ Sideways Market")
+      
 # ---------------- VOLUME (COMPACT BELOW) ----------------
 st.markdown("---")
 
