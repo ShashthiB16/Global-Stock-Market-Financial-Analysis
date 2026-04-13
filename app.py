@@ -42,34 +42,47 @@ def load_data():
 df = load_data()
 
 # ---------------- SIDEBAR FILTERS ----------------
-st.sidebar.title("📌 Filters")
+st.sidebar.markdown("## 📌 Filters")
 
-country = st.sidebar.selectbox(
-    "Country",
-    sorted(df["Country"].dropna().unique())
-)
+country = st.selectbox("Country", country_list)
 
-country_df = df[df["Country"] == country]
-
-company = st.sidebar.selectbox(
+company = st.multiselect(
     "Company",
-    sorted(country_df["Company"].dropna().unique())
+    company_list,
+    default=[company_list[0]]
 )
 
-filtered_df = country_df[country_df["Company"] == company]
+date_range = st.date_input(
+    "Date Range",
+    [filtered_df["Date"].min(), filtered_df["Date"].max()]
+)
 
-start_date = st.sidebar.date_input("Start Date", filtered_df["Date"].min())
-end_date = st.sidebar.date_input("End Date", filtered_df["Date"].max())
+price_type = st.selectbox(
+    "Price Type",
+    ["Close", "Open", "High", "Low"]
+)
 
-filtered_df = filtered_df[
-    (filtered_df["Date"] >= pd.to_datetime(start_date)) &
-    (filtered_df["Date"] <= pd.to_datetime(end_date))
-]
+range_option = st.radio(
+    "Quick Range",
+    ["1M", "3M", "6M", "1Y", "MAX"],
+    horizontal=True
+)
 
-if filtered_df.empty:
-    st.warning("No data available")
-    st.stop()
+volume_range = st.slider(
+    "Volume Filter",
+    int(filtered_df["Volume"].min()),
+    int(filtered_df["Volume"].max()),
+    (int(filtered_df["Volume"].min()), int(filtered_df["Volume"].max()))
+)
 
+indicators = st.multiselect(
+    "Indicators",
+    ["MA", "EMA", "RSI", "Bollinger Bands"]
+)
+
+if st.button("🔄 Reset Filters"):
+    st.rerun()
+  
 # ---------------- HEADER (FIXED TOP) ----------------
 latest_price = filtered_df["Close"].iloc[-1]
 first_price = filtered_df["Close"].iloc[0]
