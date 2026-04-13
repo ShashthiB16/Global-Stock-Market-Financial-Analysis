@@ -41,48 +41,105 @@ def load_data():
 
 df = load_data()
 
+
 # ---------------- SIDEBAR FILTERS ----------------
 st.sidebar.markdown("## 📌 Filters")
 
-country = st.selectbox("Country", country_list)
+# ✅ Country List
+country_list = df["Country"].dropna().unique().tolist()
+country = st.sidebar.selectbox("Country", country_list)
 
-company = st.multiselect(
+# ✅ Filter by Country FIRST
+filtered_df = df[df["Country"] == country]
+
+# ✅ Company List (based on country)
+company_list = filtered_df["Company"].dropna().unique().tolist()
+
+company = st.sidebar.multiselect(
     "Company",
     company_list,
-    default=[company_list[0]]
+    default=company_list[:1]  # safer than [0]
 )
 
-date_range = st.date_input(
+# ✅ Filter by Company
+if company:
+    filtered_df = filtered_df[filtered_df["Company"].isin(company)]
+
+# ✅ Date Range Picker
+min_date = filtered_df["Date"].min()
+max_date = filtered_df["Date"].max()
+
+date_range = st.sidebar.date_input(
     "Date Range",
-    [filtered_df["Date"].min(), filtered_df["Date"].max()]
+    [min_date, max_date]
 )
 
-price_type = st.selectbox(
+# Handle date selection safely
+if len(date_range) == 2:
+    start_date, end_date = date_range
+    filtered_df = filtered_df[
+        (filtered_df["Date"] >= pd.to_datetime(start_date)) &
+        (filtered_df["Date"] <= pd.to_datetime(end_date))
+    ]
+
+# ✅ Price Type
+price_type = st.sidebar.selectbox(
     "Price Type",
     ["Close", "Open", "High", "Low"]
 )
 
-range_option = st.radio(
+# ✅ Quick Range Filter
+range_option = st.sidebar.radio(
     "Quick Range",
     ["1M", "3M", "6M", "1Y", "MAX"],
     horizontal=True
 )
 
-volume_range = st.slider(
-    "Volume Filter",
-    int(filtered_df["Volume"].min()),
-    int(filtered_df["Volume"].max()),
-    (int(filtered_df["Volume"].min()), int(filtered_df["Volume"].max()))
-)
+if range_option != "MAX" and not filtered_df.empty:
+    days_map = {"1M": 30, "3M": 90, "6M": 180, "1Y": 365}
+    end_date = filtered_df["Date"].max()
+    start_date = end_date - pd.Timedelta(days=days_map[range_option])
 
-indicators = st.multiselect(
+    filtered_df = filtered_df[
+        (filtered_df["Date"] >= start_date) &
+        (filtered_df["Date"] <= end_date)
+    ]
+
+# ✅ Volume Filter
+if not filtered_df.empty:
+    min_vol = int(filtered_df["Volume"].min())
+    max_vol = int(filtered_df["Volume"].max())
+
+    volume_range = st.sidebar.slider(
+        "Volume Filter",
+        min_vol,
+        max_vol,
+        (min_vol, max_vol)
+    )
+
+    filtered_df = filtered_df[
+        (filtered_df["Volume"] >= volume_range[0]) &
+        (filtered_df["Volume"] <= volume_range[1])
+    ]
+
+# ✅ Indicators
+indicators = st.sidebar.multiselect(
     "Indicators",
     ["MA", "EMA", "RSI", "Bollinger Bands"]
 )
 
-if st.button("🔄 Reset Filters"):
+# ✅ Reset Button
+if st.sidebar.button("🔄 Reset Filters"):
     st.rerun()
-  
+
+# ---------------- OUTPUT CHECK ----------------
+st.write("### 📊 Filtered Data Preview")
+st.dataframe(filtered_df.head())
+
+# ---------------- EMPTY DATA HANDLING ----------------
+if filtered_df.empty:
+    st.warning("⚠️ No data available for selected filters")
+
 # ---------------- HEADER (FIXED TOP) ----------------
 latest_price = filtered_df["Close"].iloc[-1]
 first_price = filtered_df["Close"].iloc[0]
