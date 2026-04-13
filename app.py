@@ -132,13 +132,6 @@ indicators = st.sidebar.multiselect(
 if st.sidebar.button("🔄 Reset Filters"):
     st.rerun()
 
-# ---------------- OUTPUT CHECK ----------------
-st.write("### 📊 Filtered Data Preview")
-st.dataframe(filtered_df.head())
-
-# ---------------- EMPTY DATA HANDLING ----------------
-if filtered_df.empty:
-    st.warning("⚠️ No data available for selected filters")
 
 # ---------------- HEADER (FIXED TOP) ----------------
 latest_price = filtered_df["Close"].iloc[-1]
