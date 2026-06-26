@@ -6,6 +6,7 @@ This dashboard allows users to analyze stock performance across different countr
 🖥️ Dashboard Overview
 
 The dashboard includes:
+
 📌 Sidebar Filters (Country, Company, Date Range)
 
 📈 Interactive Price Chart (Line / Candlestick)
@@ -20,33 +21,25 @@ The dashboard includes:
 
 🔎 Smart Filters
 
-  Select Country
+  * Select Country
 
-  Select Company
+  * Select Company
 
 Choose Start & End Date
 
 📈 Advanced Chart Options
 
-Line Chart
-
-Candlestick Chart
-
-Area Chart
-
-Volume Overlay
+* Line Chart
+* Candlestick Chart
+* Area Chart
+* Volume Overlay
 
 📊 Key Metrics Section
-
-Highest Price
-
-Lowest Price
-
-Total Volume
-
-Percentage Growth
-
-Market Trend Insight
+* Highest Price
+* Lowest Price
+* Total Volume
+* Percentage Growth
+* Market Trend Insight
 
 📦 Tech Stack
 
@@ -59,16 +52,11 @@ Market Trend Insight
 📈 Plotly
 
 📊 What This Project Demonstrates:
-
-Financial Data Analysis
-
-Interactive Data Visualization
-
-Technical Indicator Implementation
-
-Dashboard UI/UX Design
-
-Real-world Data Analytics Application
+* Financial Data Analysis
+* Interactive Data Visualization
+* Technical Indicator Implementation
+* Dashboard UI/UX Design
+* Real-world Data Analytics Application
 
 📂 Project Structure
 
