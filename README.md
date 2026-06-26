@@ -20,12 +20,9 @@ The dashboard includes:
 ✨ Key Features
 
 🔎 Smart Filters
-
   * Select Country
-
   * Select Company
-
-Choose Start & End Date
+  * Choose Start & End Date
 
 📈 Advanced Chart Options
 
